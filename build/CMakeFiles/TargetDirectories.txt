@@ -1,0 +1,4 @@
+/homes/jwkoegeboehn/hw3/CIS520_HW3/build/CMakeFiles/rebuild_cache.dir
+/homes/jwkoegeboehn/hw3/CIS520_HW3/build/CMakeFiles/edit_cache.dir
+/homes/jwkoegeboehn/hw3/CIS520_HW3/build/CMakeFiles/libblock_store.so.dir
+/homes/jwkoegeboehn/hw3/CIS520_HW3/build/CMakeFiles/hw3_test.dir

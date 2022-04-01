@@ -23,6 +23,9 @@ extern "C"
 	// They can only create pointers to the struct, which must be given out by us
 	// This enforces a black box device, but it can be restricting
 	typedef struct block_store block_store_t;
+	
+	// The blocks that the block_store consists of
+	typedef struct block block_t;
 
 	///
 	/// This creates a new BS device, ready to go

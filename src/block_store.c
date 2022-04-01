@@ -8,23 +8,55 @@
 // remove it before you submit. Just allows things to compile initially.
 #define UNUSED(x) (void)(x)
 
+struct block //Chandra suggested making this struct in Friday's class
+{
+    unsigned char block[BLOCK_SIZE_BYTES];
+};
+
+struct block_store
+{
+        /*uint32_t bitmap_size;       //size of bitmap in bytes
+        uint32_t num_blocks;        //number of blocks in block store
+        uint32_t avail_blocks;      //number of AVAILABLE blocks in block store
+        uint32_t block_size_bytes;	//size of block in bytes
+        uint32_t block_size_bits;	//size of block in bits
+        uint32_t total_bytes;       //total number of bytes in whole block store*/
+        //Probably don't need above fields since they're already macros?
+        
+        bitmap_t* bit_array;        //our FBM using a bitmap
+        block_t blocks[BLOCK_STORE_NUM_BLOCKS];
+};
+
 block_store_t *block_store_create()
 {
-    return NULL;
+    block_store_t* block = malloc(sizeof(block_store_t));
+    return block;
 }
 
 void block_store_destroy(block_store_t *const bs)
 {
+    if (bs == NULL)
+    {
+        return;
+    }
     UNUSED(bs);
 }
 size_t block_store_allocate(block_store_t *const bs)
 {
+    if (bs == NULL)
+    {
+        return SIZE_MAX;
+    }
     UNUSED(bs);
     return 0;
 }
 
 bool block_store_request(block_store_t *const bs, const size_t block_id)
 {
+    if (bs == NULL || block_id > SIZE_MAX)
+    {
+        return false;
+    }
     UNUSED(bs);
     UNUSED(block_id);
     return false;
@@ -32,18 +64,30 @@ bool block_store_request(block_store_t *const bs, const size_t block_id)
 
 void block_store_release(block_store_t *const bs, const size_t block_id)
 {
+    if (bs == NULL || block_id > SIZE_MAX)
+    {
+        return;
+    }
     UNUSED(bs);
     UNUSED(block_id);
 }
 
 size_t block_store_get_used_blocks(const block_store_t *const bs)
 {
+    if (bs == NULL)
+    {
+        return SIZE_MAX;
+    }
     UNUSED(bs);
     return 0;
 }
 
 size_t block_store_get_free_blocks(const block_store_t *const bs)
 {
+    if (bs == NULL)
+    {
+        return SIZE_MAX;
+    }
     UNUSED(bs);
     return 0;
 }
@@ -55,6 +99,10 @@ size_t block_store_get_total_blocks()
 
 size_t block_store_read(const block_store_t *const bs, const size_t block_id, void *buffer)
 {
+    if (bs == NULL || block_id > SIZE_MAX || buffer == NULL)
+    {
+        return 0;
+    }
     UNUSED(bs);
     UNUSED(block_id);
     UNUSED(buffer);
@@ -63,6 +111,10 @@ size_t block_store_read(const block_store_t *const bs, const size_t block_id, vo
 
 size_t block_store_write(block_store_t *const bs, const size_t block_id, const void *buffer)
 {
+    if (bs == NULL || block_id > SIZE_MAX || buffer == NULL)
+    {
+        return 0;
+    }
     UNUSED(bs);
     UNUSED(block_id);
     UNUSED(buffer);
@@ -71,12 +123,20 @@ size_t block_store_write(block_store_t *const bs, const size_t block_id, const v
 
 block_store_t *block_store_deserialize(const char *const filename)
 {
+    if (filename == NULL)
+    {
+        return NULL;
+    }
     UNUSED(filename);
     return NULL;
 }
 
 size_t block_store_serialize(const block_store_t *const bs, const char *const filename)
 {
+    if (filename == NULL || bs == NULL)
+    {
+        return 0;
+    }
     UNUSED(bs);
     UNUSED(filename);
     return 0;
