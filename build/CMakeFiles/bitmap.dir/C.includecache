@@ -1,0 +1,24 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../include/bitmap.h
+stdint.h
+-
+stdlib.h
+-
+stddef.h
+-
+stdbool.h
+-
+
+/homes/jwkoegeboehn/hw3/CIS520_HW3/src/bitmap.c
+bitmap.h
+/homes/jwkoegeboehn/hw3/CIS520_HW3/src/bitmap.h
+string.h
+-
+

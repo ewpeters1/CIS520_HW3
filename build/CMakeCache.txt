@@ -215,6 +215,9 @@ hw3_BINARY_DIR:STATIC=/homes/jwkoegeboehn/hw3/CIS520_HW3/build
 //Value Computed by CMake
 hw3_SOURCE_DIR:STATIC=/homes/jwkoegeboehn/hw3/CIS520_HW3
 
+//Dependencies for the target
+libblock_store.so_LIB_DEPENDS:STATIC=general;bitmap;
+
 
 ########################
 # INTERNAL cache entries

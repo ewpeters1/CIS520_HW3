@@ -111,6 +111,19 @@ depend:
 .PHONY : depend
 
 #=============================================================================
+# Target rules for targets named hw3_test
+
+# Build rule for target.
+hw3_test: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 hw3_test
+.PHONY : hw3_test
+
+# fast build rule for target.
+hw3_test/fast:
+	$(MAKE) -f CMakeFiles/hw3_test.dir/build.make CMakeFiles/hw3_test.dir/build
+.PHONY : hw3_test/fast
+
+#=============================================================================
 # Target rules for targets named libblock_store.so
 
 # Build rule for target.
@@ -124,17 +137,44 @@ libblock_store.so/fast:
 .PHONY : libblock_store.so/fast
 
 #=============================================================================
-# Target rules for targets named hw3_test
+# Target rules for targets named bitmap
 
 # Build rule for target.
-hw3_test: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 hw3_test
-.PHONY : hw3_test
+bitmap: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 bitmap
+.PHONY : bitmap
 
 # fast build rule for target.
-hw3_test/fast:
-	$(MAKE) -f CMakeFiles/hw3_test.dir/build.make CMakeFiles/hw3_test.dir/build
-.PHONY : hw3_test/fast
+bitmap/fast:
+	$(MAKE) -f CMakeFiles/bitmap.dir/build.make CMakeFiles/bitmap.dir/build
+.PHONY : bitmap/fast
+
+src/bitmap.o: src/bitmap.c.o
+
+.PHONY : src/bitmap.o
+
+# target to build an object file
+src/bitmap.c.o:
+	$(MAKE) -f CMakeFiles/bitmap.dir/build.make CMakeFiles/bitmap.dir/src/bitmap.c.o
+.PHONY : src/bitmap.c.o
+
+src/bitmap.i: src/bitmap.c.i
+
+.PHONY : src/bitmap.i
+
+# target to preprocess a source file
+src/bitmap.c.i:
+	$(MAKE) -f CMakeFiles/bitmap.dir/build.make CMakeFiles/bitmap.dir/src/bitmap.c.i
+.PHONY : src/bitmap.c.i
+
+src/bitmap.s: src/bitmap.c.s
+
+.PHONY : src/bitmap.s
+
+# target to generate assembly for a file
+src/bitmap.c.s:
+	$(MAKE) -f CMakeFiles/bitmap.dir/build.make CMakeFiles/bitmap.dir/src/bitmap.c.s
+.PHONY : src/bitmap.c.s
 
 src/block_store.o: src/block_store.c.o
 
@@ -198,8 +238,12 @@ help:
 	@echo "... depend"
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
-	@echo "... libblock_store.so"
 	@echo "... hw3_test"
+	@echo "... libblock_store.so"
+	@echo "... bitmap"
+	@echo "... src/bitmap.o"
+	@echo "... src/bitmap.i"
+	@echo "... src/bitmap.s"
 	@echo "... src/block_store.o"
 	@echo "... src/block_store.i"
 	@echo "... src/block_store.s"

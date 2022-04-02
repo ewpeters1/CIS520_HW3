@@ -29,8 +29,10 @@ struct block_store
 
 block_store_t *block_store_create()
 {
-    block_store_t* block = malloc(sizeof(block_store_t));
-    return block;
+    block_store_t* blocks = malloc(sizeof(block_store_t));
+    blocks->bit_array = bitmap_create(BLOCK_STORE_NUM_BLOCKS); //also equal to BITMAP_SIZE_BYTES * 8
+    bitmap_set(blocks->bit_array, 126); //set the 127th bit since that's where our bitmap array is stored/being used
+    return blocks;
 }
 
 void block_store_destroy(block_store_t *const bs)
