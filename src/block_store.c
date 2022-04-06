@@ -74,12 +74,17 @@ bool block_store_request(block_store_t *const bs, const size_t block_id)
 
 void block_store_release(block_store_t *const bs, const size_t block_id)
 {
-    if (bs == NULL || block_id > SIZE_MAX)
-    {
+    if(!bs || block_id >= BLOCK_STORE_NUM_BLOCKS)
         return;
-    }
-    UNUSED(bs);
-    UNUSED(block_id);
+
+    // check if bit is already cleared
+    if(bitmap_test(bs->bitmap, block_id) == 0)
+        return;
+
+    // clear bit
+    bitmap_reset(bs->bitmap, block_id);
+
+    return;
 }
 
 size_t block_store_get_used_blocks(const block_store_t *const bs)
