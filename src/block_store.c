@@ -59,13 +59,17 @@ size_t block_store_allocate(block_store_t *const bs)
 
 bool block_store_request(block_store_t *const bs, const size_t block_id)
 {
-    if (bs == NULL || block_id > SIZE_MAX)
+    if (bs == NULL || bs->bit_array == NULL || block_id > BLOCK_STORE_AVAIL_BLOCKS)
     {
         return false;
     }
-    UNUSED(bs);
-    UNUSED(block_id);
-    return false;
+    bool used = bitmap_test(bs->bit_array, block_id);
+    if (used)
+    {
+        return false;
+    }
+    bitmap_set(bs->bit_array, block_id);
+    return true;
 }
 
 void block_store_release(block_store_t *const bs, const size_t block_id)
@@ -84,7 +88,7 @@ size_t block_store_get_used_blocks(const block_store_t *const bs)
     {
         return SIZE_MAX;
     }
-    return bitmap_total_set(bs->bit_array); //might need to subtract one since bitmap is always using a block?
+    return bitmap_total_set(bs->bit_array) - 1; //subtracting one since bitmap is always using a block
 }
 
 size_t block_store_get_free_blocks(const block_store_t *const bs)
