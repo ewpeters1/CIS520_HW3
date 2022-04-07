@@ -1,2 +1,4 @@
-# Ignore build folder
-build
+# Ignore build directory
+build/
+#ignore build folder
+/build
