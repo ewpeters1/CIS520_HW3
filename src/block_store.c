@@ -2,6 +2,9 @@
 #include <stdint.h>
 #include "bitmap.h"
 #include "block_store.h"
+#include <string.h>
+#include <fcntl.h> // for open
+#include <unistd.h> // for close
 // include more if you need
 
 // You might find this handy.  I put it around unused parameters, but you should
@@ -24,7 +27,7 @@ struct block_store
         //Probably don't need above fields since they're already macros?
         
         bitmap_t* bit_array;        //our FBM using a bitmap
-        block_t blocks[BLOCK_STORE_NUM_BLOCKS];
+        block_t* block_data;        //data within the blocks
 };
 
 block_store_t *block_store_create()
@@ -32,14 +35,15 @@ block_store_t *block_store_create()
     block_store_t* blocks = malloc(sizeof(block_store_t));
     blocks->bit_array = bitmap_create(BLOCK_STORE_NUM_BLOCKS); //also equal to BITMAP_SIZE_BYTES * 8
     bitmap_set(blocks->bit_array, 126); //set the 127th bit since that's where our bitmap array is stored/being used
+    blocks->block_data = malloc(sizeof(block_t) * BLOCK_STORE_NUM_BLOCKS);
     return blocks;
 }
 
 void block_store_destroy(block_store_t *const bs)
 {
-    if(!bs || !bs->bitmap) 
+    if(!bs || !bs->bit_array) 
         return;      
-    bitmap_destroy(bs->bitmap);
+    bitmap_destroy(bs->bit_array);
     free(bs);       
 }
 
@@ -78,11 +82,11 @@ void block_store_release(block_store_t *const bs, const size_t block_id)
         return;
 
     // check if bit is already cleared
-    if(bitmap_test(bs->bitmap, block_id) == 0)
+    if(bitmap_test(bs->bit_array, block_id) == 0)
         return;
 
     // clear bit
-    bitmap_reset(bs->bitmap, block_id);
+    bitmap_reset(bs->bit_array, block_id);
 
     return;
 }
@@ -115,7 +119,7 @@ size_t block_store_read(const block_store_t *const bs, const size_t block_id, vo
     if(!bs || block_id > BLOCK_STORE_NUM_BYTES || !buffer)
         return 0;
     // copy bs block data at block id into buffer
-    if(!memcpy(buffer, bs->block_data[block_id], BLOCK_SIZE_BYTES))
+    if(!memcpy(buffer, &(bs->block_data[block_id]), BLOCK_SIZE_BYTES))
         return 0;
     // return bytes read
     return BLOCK_SIZE_BYTES;
@@ -127,7 +131,7 @@ size_t block_store_write(block_store_t *const bs, const size_t block_id, const v
     if(!bs || block_id >= BLOCK_STORE_NUM_BYTES || !buffer)
         return 0;
     // copy buffer into bs block data at block id
-    memcpy(bs->block_data[block_id], buffer, BLOCK_SIZE_BYTES);
+    memcpy(&(bs->block_data[block_id]), buffer, BLOCK_SIZE_BYTES);
     // return bytes written
     return BLOCK_SIZE_BYTES;
 }
@@ -152,14 +156,17 @@ block_store_t *block_store_deserialize(const char *const filename)
     if(r < 0)
         return NULL;
     
-    bs->bitmap = bitmap_import(BITMAP_SIZE_BYTES, buffer);
-    if(!bs->bitmap)
+    bs->bit_array = bitmap_import(BITMAP_SIZE_BYTES, buffer);
+    if(!bs->bit_array)
         return NULL;
     free(buffer);
 
-    
-    **(bs)->block_data = (char *)malloc(BLOCK_STORE_AVAIL_BLOCKS * BLOCK_STORE_NUM_BLOCKS * sizeof(char));
-    read(fd, **bs->block_data, BLOCK_STORE_NUM_BLOCKS * BLOCK_STORE_AVAIL_BLOCKS);
+    if (bs->block_data)
+    {
+        free(bs->block_data);
+    }
+    bs->block_data = malloc(sizeof(block_t) * BLOCK_STORE_NUM_BLOCKS); //removed double pointers on bs (giving errors) along with char* casting
+    read(fd, &(bs->block_data), BLOCK_STORE_NUM_BLOCKS * BLOCK_SIZE_BYTES); //removed double pointers on bs (giving errors)
     
     int c = close(fd);
     
