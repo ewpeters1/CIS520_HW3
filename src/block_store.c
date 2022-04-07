@@ -114,23 +114,37 @@ size_t block_store_get_total_blocks()
     return BLOCK_STORE_AVAIL_BLOCKS;
 }
 
+	///
+	/// Reads data from the specified block and writes it to the designated buffer
+	/// \param bs BS device
+	/// \param block_id Source block id
+	/// \param buffer Data buffer to write to
+	/// \return Number of bytes read, 0 on error
+	///
 size_t block_store_read(const block_store_t *const bs, const size_t block_id, void *buffer)
 {
     if(!bs || block_id > BLOCK_STORE_NUM_BYTES || !buffer)
         return 0;
-    // copy bs block data at block id into buffer
+    // copy bs block_data at block_id into buffer
     if(!memcpy(buffer, &(bs->block_data[block_id]), BLOCK_SIZE_BYTES))
         return 0;
     // return bytes read
     return BLOCK_SIZE_BYTES;
 }
 
+	///
+	/// Reads data from the specified buffer and writes it to the designated block
+	/// \param bs BS device
+	/// \param block_id Destination block id
+	/// \param buffer Data buffer to read from
+	/// \return Number of bytes written, 0 on error
+	///
 size_t block_store_write(block_store_t *const bs, const size_t block_id, const void *buffer)
 {
      // error check parameters
     if(!bs || block_id >= BLOCK_STORE_NUM_BYTES || !buffer)
         return 0;
-    // copy buffer into bs block data at block id
+    // copy buffer into bs block_data at block_id
     memcpy(&(bs->block_data[block_id]), buffer, BLOCK_SIZE_BYTES);
     // return bytes written
     return BLOCK_SIZE_BYTES;
@@ -175,14 +189,33 @@ block_store_t *block_store_deserialize(const char *const filename)
     
     return bs;
 }
-
+	///
+	/// Writes the entirety of the BS device to file, overwriting it if it exists - for grads/bonus
+	/// \param bs BS device
+	/// \param filename The file to write to
+	/// \return w number of bytes written, 0 on error
+	///
 size_t block_store_serialize(const block_store_t *const bs, const char *const filename)
 {
-    if (filename == NULL || bs == NULL)
+    
+    if (filename == NULL || bs == NULL) //could sub in !filename || !bs
     {
         return 0;
     }
-    UNUSED(bs);
-    UNUSED(filename);
-    return 0;
+    
+    // open file
+    int flags = O_WRONLY | O_CREAT | O_TRUNC; // see https://pubs.opengroup.org/onlinepubs/7908799/xsh/open.html
+    int fil = open(filename, flags, 0666); //pathname, flags, mode(-rw-rw-rw-) https://ss64.com/bash/chmod.html
+    if(fil < 0) return 0;
+    
+    //perform write
+    int w = write(fil, bs, BLOCK_STORE_NUM_BYTES);
+    if(w < 0) return 0;// error during write cycle
+    
+    // close file
+    int f = close(fil);
+    int respects = 0;
+    if(f < 0) return respects; // pay respects to the error during close.
+    
+    return w; // theoretical number of bytes written. May include 0, in theory, but no less.
 }
