@@ -37,12 +37,12 @@ block_store_t *block_store_create()
 
 void block_store_destroy(block_store_t *const bs)
 {
-    if (bs == NULL)
-    {
-        return;
-    }
-    UNUSED(bs);
+    if(!bs || !bs->bitmap) 
+        return;      
+    bitmap_destroy(bs->bitmap);
+    free(bs);       
 }
+
 size_t block_store_allocate(block_store_t *const bs)
 {
     if (bs == NULL || bs->bit_array == NULL)
@@ -112,36 +112,61 @@ size_t block_store_get_total_blocks()
 
 size_t block_store_read(const block_store_t *const bs, const size_t block_id, void *buffer)
 {
-    if (bs == NULL || block_id > SIZE_MAX || buffer == NULL)
-    {
+    if(!bs || block_id > BLOCK_STORE_NUM_BYTES || !buffer)
         return 0;
-    }
-    UNUSED(bs);
-    UNUSED(block_id);
-    UNUSED(buffer);
-    return 0;
+    // copy bs block data at block id into buffer
+    if(!memcpy(buffer, bs->block_data[block_id], BLOCK_SIZE_BYTES))
+        return 0;
+    // return bytes read
+    return BLOCK_SIZE_BYTES;
 }
 
 size_t block_store_write(block_store_t *const bs, const size_t block_id, const void *buffer)
 {
-    if (bs == NULL || block_id > SIZE_MAX || buffer == NULL)
-    {
+     // error check parameters
+    if(!bs || block_id >= BLOCK_STORE_NUM_BYTES || !buffer)
         return 0;
-    }
-    UNUSED(bs);
-    UNUSED(block_id);
-    UNUSED(buffer);
-    return 0;
+    // copy buffer into bs block data at block id
+    memcpy(bs->block_data[block_id], buffer, BLOCK_SIZE_BYTES);
+    // return bytes written
+    return BLOCK_SIZE_BYTES;
 }
 
 block_store_t *block_store_deserialize(const char *const filename)
 {
-    if (filename == NULL)
-    {
+    if(!filename)
         return NULL;
-    }
-    UNUSED(filename);
-    return NULL;
+
+    // open file to read
+    int fd = open(filename, O_RDONLY);
+    
+    if(fd < 0)
+        return NULL;
+
+    block_store_t *bs = (block_store_t *)malloc(sizeof(block_store_t));
+    
+    void *buffer = (bitmap_t *)malloc(BITMAP_SIZE_BYTES * sizeof(char));
+    
+    int r = read(fd, buffer, BITMAP_SIZE_BYTES);
+    
+    if(r < 0)
+        return NULL;
+    
+    bs->bitmap = bitmap_import(BITMAP_SIZE_BYTES, buffer);
+    if(!bs->bitmap)
+        return NULL;
+    free(buffer);
+
+    
+    **(bs)->block_data = (char *)malloc(BLOCK_STORE_AVAIL_BLOCKS * BLOCK_STORE_NUM_BLOCKS * sizeof(char));
+    read(fd, **bs->block_data, BLOCK_STORE_NUM_BLOCKS * BLOCK_STORE_AVAIL_BLOCKS);
+    
+    int c = close(fd);
+    
+    if(c < 0)
+        return NULL;
+    
+    return bs;
 }
 
 size_t block_store_serialize(const block_store_t *const bs, const char *const filename)
