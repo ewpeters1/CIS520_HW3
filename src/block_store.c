@@ -37,44 +37,44 @@ block_store_t *block_store_create()
     block_store_t* blocks = malloc(sizeof(block_store_t));
     blocks->bit_array = bitmap_create(BLOCK_STORE_NUM_BLOCKS); //also equal to BITMAP_SIZE_BYTES * 8
     bitmap_set(blocks->bit_array, 126); //set the 127th bit since that's where our bitmap array is stored/being used
-    blocks->block_data = malloc(sizeof(block_t) * BLOCK_STORE_NUM_BLOCKS);
+    blocks->block_data = malloc(sizeof(block_t) * BLOCK_STORE_NUM_BLOCKS); //allocate memory for our block data
     return blocks;
 }
 
 void block_store_destroy(block_store_t *const bs)
 {
-    if(!bs || !bs->bit_array) 
+    if(!bs || !bs->bit_array) //if block store or its bitmap don't exist, return
         return;      
-    bitmap_destroy(bs->bit_array);
-    free(bs);       
+    bitmap_destroy(bs->bit_array); //destroy the bitmap
+    free(bs); //free the allocated memory for block store
 }
 
 size_t block_store_allocate(block_store_t *const bs)
 {
-    if (bs == NULL || bs->bit_array == NULL)
+    if (bs == NULL || bs->bit_array == NULL) //error if block store or bitmap don't exist
     {
         return SIZE_MAX;
     }
-    size_t bit_index = bitmap_ffz(bs->bit_array);
-    if (bit_index != SIZE_MAX)
+    size_t bit_index = bitmap_ffz(bs->bit_array); //find index of first zero bit
+    if (bit_index != SIZE_MAX) //if successfully found free block
     {
-        bitmap_set(bs->bit_array, bit_index);
+        bitmap_set(bs->bit_array, bit_index); //set bit to used
     }
     return bit_index;
 }
 
 bool block_store_request(block_store_t *const bs, const size_t block_id)
 {
-    if (bs == NULL || bs->bit_array == NULL || block_id > BLOCK_STORE_AVAIL_BLOCKS)
+    if (bs == NULL || bs->bit_array == NULL || block_id > BLOCK_STORE_AVAIL_BLOCKS) //error if bs and bitmap don't exist, or if block_id is bigger than block store
     {
         return false;
     }
-    bool used = bitmap_test(bs->bit_array, block_id);
-    if (used)
+    bool used = bitmap_test(bs->bit_array, block_id); //see if block is used
+    if (used) //return unsuccessful if used
     {
         return false;
     }
-    bitmap_set(bs->bit_array, block_id);
+    bitmap_set(bs->bit_array, block_id); //on success set bit to used
     return true;
 }
 
@@ -95,7 +95,7 @@ void block_store_release(block_store_t *const bs, const size_t block_id)
 
 size_t block_store_get_used_blocks(const block_store_t *const bs)
 {
-    if (bs == NULL || bs->bit_array == NULL)
+    if (bs == NULL || bs->bit_array == NULL) //error on bs or bitmap not existing
     {
         return SIZE_MAX;
     }
@@ -104,16 +104,16 @@ size_t block_store_get_used_blocks(const block_store_t *const bs)
 
 size_t block_store_get_free_blocks(const block_store_t *const bs)
 {
-    if (bs == NULL || bs->bit_array == NULL)
+    if (bs == NULL || bs->bit_array == NULL) //error on bs or bitmap not existing
     {
         return SIZE_MAX;
     }
-    return BLOCK_STORE_NUM_BLOCKS - bitmap_total_set(bs->bit_array);
+    return BLOCK_STORE_NUM_BLOCKS - bitmap_total_set(bs->bit_array); //total blocks - used blocks
 }
 
 size_t block_store_get_total_blocks()
 {
-    return BLOCK_STORE_AVAIL_BLOCKS;
+    return BLOCK_STORE_AVAIL_BLOCKS; //constant
 }
 
 	///
@@ -163,26 +163,26 @@ block_store_t *block_store_deserialize(const char *const filename)
     if(fd < 0)
         return NULL;
 
-    block_store_t *bs = (block_store_t *)malloc(sizeof(block_store_t));
+    block_store_t *bs = (block_store_t *)malloc(sizeof(block_store_t)); //allocate memory for a block store
     
-    void *buffer = (bitmap_t *)malloc(BITMAP_SIZE_BYTES * sizeof(char));
+    void *buffer = (bitmap_t *)malloc(BITMAP_SIZE_BYTES * sizeof(char)); //create a buffer to read in bitmap data
     
-    int r = read(fd, buffer, BITMAP_SIZE_BYTES);
+    int r = read(fd, buffer, BITMAP_SIZE_BYTES); //read file info for bitmap
     
     if(r < 0)
         return NULL;
     
-    bs->bit_array = bitmap_import(BITMAP_SIZE_BYTES, buffer);
+    bs->bit_array = bitmap_import(BITMAP_SIZE_BYTES, buffer); //put bitmap into bit_array
     if(!bs->bit_array)
         return NULL;
-    free(buffer);
+    free(buffer); //free allocated buffer memory
 
-    if (bs->block_data)
+    if (bs->block_data) //if block_data present, free that memory
     {
         free(bs->block_data);
     }
-    bs->block_data = malloc(sizeof(block_t) * BLOCK_STORE_NUM_BLOCKS); //removed double pointers on bs (giving errors) along with char* casting
-    read(fd, bs->block_data, BLOCK_STORE_NUM_BYTES); //removed double pointers on bs (giving errors)
+    bs->block_data = malloc(sizeof(block_t) * BLOCK_STORE_NUM_BLOCKS); //make new memory for block data
+    read(fd, bs->block_data, BLOCK_STORE_NUM_BYTES); //read in block data from file
     
     int c = close(fd);
     
@@ -213,7 +213,7 @@ size_t block_store_serialize(const block_store_t *const bs, const char *const fi
     }
     
     // write bitmap with BITMAP_SIZE_BYTES
-    int w = fwrite(bs, BITMAP_SIZE_BYTES, (2*BLOCK_STORE_NUM_BLOCKS), file); //not to sure about this one.
+    int w = fwrite(bitmap_export(bs->bit_array), BITMAP_SIZE_BYTES, 1, file);
     ernsv = errno;
     if(errno != 0){
       printf("Error during block_data write: %i", ernsv);
@@ -221,7 +221,7 @@ size_t block_store_serialize(const block_store_t *const bs, const char *const fi
     }
     
     //write block_data with BLOCK_STORE_NUM_BYTES
-    w = fwrite(bs, BLOCK_SIZE_BYTES, BLOCK_STORE_NUM_BLOCKS, file);
+    w = fwrite(bs->block_data, BLOCK_SIZE_BYTES, BLOCK_STORE_NUM_BLOCKS, file);
     ernsv = errno;
     if(errno != 0){
       printf("Error during block_store write cycle: %i", ernsv);
@@ -235,5 +235,5 @@ size_t block_store_serialize(const block_store_t *const bs, const char *const fi
       printf("Error during close: %i", ernsv);
       return 0;// error during close?
     }
-    return w; // theoretical number of bytes written. May include 0, in theory, but no less.
+    return w * BLOCK_SIZE_BYTES; //w holds the number of blocks in block store, so we multiply by BLOCK_SIZE_BYTES for total bytes
 }
