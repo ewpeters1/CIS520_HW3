@@ -5,6 +5,8 @@
 #include <string.h>
 #include <fcntl.h> // for open
 #include <unistd.h> // for close
+#include <errno.h>// for errno handling
+#include <stdlib.h>// for fopen
 // include more if you need
 
 // You might find this handy.  I put it around unused parameters, but you should
@@ -180,7 +182,7 @@ block_store_t *block_store_deserialize(const char *const filename)
         free(bs->block_data);
     }
     bs->block_data = malloc(sizeof(block_t) * BLOCK_STORE_NUM_BLOCKS); //removed double pointers on bs (giving errors) along with char* casting
-    read(fd, &(bs->block_data), BLOCK_STORE_NUM_BLOCKS * BLOCK_SIZE_BYTES); //removed double pointers on bs (giving errors)
+    read(fd, bs->block_data, BLOCK_STORE_NUM_BYTES); //removed double pointers on bs (giving errors)
     
     int c = close(fd);
     
@@ -203,19 +205,35 @@ size_t block_store_serialize(const block_store_t *const bs, const char *const fi
         return 0;
     }
     
-    // open file
-    int flags = O_WRONLY | O_CREAT | O_TRUNC; // see https://pubs.opengroup.org/onlinepubs/7908799/xsh/open.html
-    int fil = open(filename, flags, 0666); //pathname, flags, mode(-rw-rw-rw-) https://ss64.com/bash/chmod.html
-    if(fil < 0) return 0;
+    FILE *file = fopen(filename, "w+"); // clear or create file as needed
+    int ernsv = errno;
+    if(errno != 0){
+      printf("Error during fopen: %i", ernsv);
+      return 0;// error during bitmap write cycle?
+    }
     
-    //perform write
-    int w = write(fil, bs, BLOCK_STORE_NUM_BYTES);
-    if(w < 0) return 0;// error during write cycle
+    // write bitmap with BITMAP_SIZE_BYTES
+    int w = fwrite(bs, BITMAP_SIZE_BYTES, (2*BLOCK_STORE_NUM_BLOCKS), file); //not to sure about this one.
+    ernsv = errno;
+    if(errno != 0){
+      printf("Error during block_data write: %i", ernsv);
+      return 0;// error during bitmap write cycle?
+    }
+    
+    //write block_data with BLOCK_STORE_NUM_BYTES
+    w = fwrite(bs, BLOCK_SIZE_BYTES, BLOCK_STORE_NUM_BLOCKS, file);
+    ernsv = errno;
+    if(errno != 0){
+      printf("Error during block_store write cycle: %i", ernsv);
+      return 0;// error during bs write cycle?
+    }
     
     // close file
-    int f = close(fil);
-    int respects = 0;
-    if(f < 0) return respects; // pay respects to the error during close.
-    
+    fclose(file);
+    ernsv = errno;
+    if(errno != 0){
+      printf("Error during close: %i", ernsv);
+      return 0;// error during close?
+    }
     return w; // theoretical number of bytes written. May include 0, in theory, but no less.
 }
