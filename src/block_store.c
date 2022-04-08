@@ -7,27 +7,20 @@
 #include <unistd.h> // for close
 #include <errno.h>// for errno handling
 #include <stdlib.h>// for fopen
+#include <math.h> //for ceil
 // include more if you need
 
 // You might find this handy.  I put it around unused parameters, but you should
 // remove it before you submit. Just allows things to compile initially.
 #define UNUSED(x) (void)(x)
 
-struct block //Chandra suggested making this struct in Friday's class
+struct block
 {
     unsigned char block[BLOCK_SIZE_BYTES];
 };
 
 struct block_store
 {
-        /*uint32_t bitmap_size;       //size of bitmap in bytes
-        uint32_t num_blocks;        //number of blocks in block store
-        uint32_t avail_blocks;      //number of AVAILABLE blocks in block store
-        uint32_t block_size_bytes;	//size of block in bytes
-        uint32_t block_size_bits;	//size of block in bits
-        uint32_t total_bytes;       //total number of bytes in whole block store*/
-        //Probably don't need above fields since they're already macros?
-        
         bitmap_t* bit_array;        //our FBM using a bitmap
         block_t* block_data;        //data within the blocks
 };
@@ -36,7 +29,16 @@ block_store_t *block_store_create()
 {
     block_store_t* blocks = malloc(sizeof(block_store_t));
     blocks->bit_array = bitmap_create(BLOCK_STORE_NUM_BLOCKS); //also equal to BITMAP_SIZE_BYTES * 8
-    bitmap_set(blocks->bit_array, 126); //set the 127th bit since that's where our bitmap array is stored/being used
+    int bitmapBlock = 126;
+    bitmap_set(blocks->bit_array, bitmapBlock); //set the 127th bit since that's where our bitmap array is stored/being used
+    int bitmapRemaining = BITMAP_SIZE_BYTES - BLOCK_SIZE_BYTES;
+    int i = 1;
+    while (bitmapRemaining > 0) //if bitmap takes up more blocks
+    {
+        bitmap_set(blocks->bit_array, bitmapBlock + i); //set the bit for the next block
+        bitmapRemaining -= BLOCK_SIZE_BYTES; //see if any bitmap data is remaining
+        i++; //increment to find index of next block if necessary
+    }
     blocks->block_data = malloc(sizeof(block_t) * BLOCK_STORE_NUM_BLOCKS); //allocate memory for our block data
     return blocks;
 }
@@ -99,7 +101,9 @@ size_t block_store_get_used_blocks(const block_store_t *const bs)
     {
         return SIZE_MAX;
     }
-    return bitmap_total_set(bs->bit_array) - 1; //subtracting one since bitmap is always using a block
+    int i = ceil((double)BITMAP_SIZE_BYTES / BLOCK_SIZE_BYTES);
+    printf("Number of bitmap blocks: %d", i);
+    return bitmap_total_set(bs->bit_array) - i; //subtracting i since bitmap is always using one or more blocks
 }
 
 size_t block_store_get_free_blocks(const block_store_t *const bs)
